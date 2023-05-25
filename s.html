@@ -2,32 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock News</title>
 </head>
 <body>
   <h1>Stock News</h1>
-  <form action="index.php" method="post">
-    <input type="text" name="stock" placeholder="Stock">
-    <input type="text" name="keyword" placeholder="Keyword">
-    <input type="submit" value="Search">
-  </form>
-  <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $stock = $_POST['stock'];
-      $keyword = $_POST['keyword'];
-
-      // Get news for the stock and keyword
-      $url = 'https://www.82alda.co.kr/newsfeed?stock=' . $stock . '&keyword=' . $keyword;
-      $response = file_get_contents($url);
-
-      // Parse the JSON response
-      $news = json_decode($response, true);
-
-      // Loop through the news and print the title and link
-      foreach ($news as $item) {
-        echo '<a href="' . $item['link'] . '">' . $item['title'] . '</a><br>';
-      }
+  <div id="news-list"></div>
+  <script>
+    function getNews() {
+      var keywords = ['삼성전자', '현대자동차', 'LG전자'];
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://news.google.com/news/rss/?q=' + keywords.join('+'));
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          var newsList = JSON.parse(xhr.responseText);
+          for (var i = 0; i < newsList.length; i++) {
+            var news = newsList[i];
+            var li = document.createElement('li');
+            li.innerText = news.title;
+            li.href = news.link;
+            document.getElementById('news-list').appendChild(li);
+          }
+        } else {
+          console.log('Error fetching news: ' + xhr.status);
+        }
+      };
+      xhr.send();
     }
-  ?>
+    window.onload = getNews;
+  </script>
 </body>
 </html>
