@@ -1,0 +1,102 @@
+import telegram
+import schedule
+import time
+import sys
+import io
+from bs4 import BeautifulSoup
+import requests
+from filterList import *
+import pytz
+import datetime
+
+recentSubject = ""
+token = "여러분의 텔레그램 토큰"
+bot = telegram.Bot(token=token)
+chat_id = 여러분이 받을 텔레그램 아이디
+
+
+def job():
+    global recentSubject
+
+    now = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
+    if now.hour >= 16 or now.hour <= 8:
+        return
+
+    sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8')
+    sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
+
+    BASE_URL = "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&listType=title&sid1=001"
+
+    with requests.Session() as s:
+        res = s.get(BASE_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        if res.status_code == requests.codes.ok:
+            soup = BeautifulSoup(res.text, 'html.parser')
+            article = soup.select_one(
+                '#main_content > div.list_body.newsflash_body > ul:nth-child(1) > li:nth-child(1) > a')
+            articleText = article.text
+            articleHref = article.attrs['href']
+            for i in range(0, len(newsFilter)):
+                if (newsFilter[i] in articleText) and (articleText != recentSubject):
+                    bot.sendMessage(chat_id=chat_id,
+                                    text=articleText + articleHref)
+                    recentSubject = articleText
+
+
+# 1초 마다 실행
+schedule.every(1).seconds.do(job)
+
+bot.sendMessage(chat_id=chat_id, text="감시 시작")
+
+# 파이썬 스케줄러
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+    newsFilter = [
+    "M&A",
+    "경영권분쟁",
+    "급등세",
+    "매각",
+    "특징주",
+    "인수",
+    "최대주주변경",
+    "합병",
+    "항암",
+    "독점",
+    "무증",
+    "국책",
+    "삼성",
+    "임상",
+    "치매",
+    "면역",
+    "FDA",
+    "기술이전",
+    "북한",
+    "철도",
+    "수소",
+    "전기차",
+    "코로나",
+    "메타버스",
+    "속보",
+    "단독",
+    "분할",
+    "싸이월드",
+    "NFT",
+    "P2E",
+    "오미크론",
+    "관해",
+    "최초",
+    "완치",
+    "탈모",
+    "남북",
+    "폐배터리",
+    "추가상장",
+    "mRNA",
+    "디즈니",
+    "토스",
+    "야놀자",
+    "마켓컬리",
+    "리비안",
+    "전고체",
+    "그래핀",
+    "오징어게임",
+]
